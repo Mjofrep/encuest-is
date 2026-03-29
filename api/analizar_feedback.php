@@ -35,13 +35,15 @@ function analizarFeedbackConIA(int $respuestaId): bool
         'properties' => [
             'sentimiento_global' => [
                 'type' => 'string',
-                'enum' => ['positivo', 'negativo', 'neutro', 'mixto']
+                'enum' => ['positivo', 'negativo', 'neutro']
             ],
             'tema_principal' => [
-                'type' => 'string'
+                'type' => 'string',
+                'enum' => ['atencion', 'tiempo_de_espera', 'claridad', 'soporte', 'precio', 'seguimiento', 'otro']
             ],
             'tema_secundario' => [
-                'type' => 'string'
+                'type' => 'string',
+                'enum' => ['atencion', 'tiempo_de_espera', 'claridad', 'soporte', 'precio', 'seguimiento', 'otro']
             ],
             'urgencia' => [
                 'type' => 'string',
@@ -101,13 +103,15 @@ function analizarFeedbackConIA(int $respuestaId): bool
                         'Debes analizar comentarios de usuarios.',
                         'Responde solo con JSON válido según el esquema.',
                         'Criterios:',
-                        '- sentimiento_global: positivo, negativo, neutro o mixto',
+                        '- sentimiento_global: positivo, negativo o neutro',
+                        '- tema_principal y tema_secundario: atencion, tiempo_de_espera, claridad, soporte, precio, seguimiento u otro',
                         '- urgencia: baja, media o alta',
                         '- resumen: máximo 20 palabras',
                         '- accion_sugerida: máximo 1 oración',
                         '- fortalezas: lista de hallazgos positivos concretos',
                         '- problemas: lista de hallazgos negativos concretos',
-                        '- Si el comentario mezcla cosas buenas y malas, usa sentimiento_global = "mixto".',
+                        '- Si el comentario mezcla cosas buenas y malas, elige el sentimiento predominante; si no predomina, usa "neutro".',
+                        '- Si el tema no encaja, usa "otro".',
                         '- No inventes información.',
                         '- Si no hay fortalezas o problemas claros, devuelve arrays vacíos.'
                     ])
