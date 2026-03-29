@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/csrf.php';
+
+requireRole(['admin']);
 
 $pdo = db();
 
@@ -11,6 +15,13 @@ function generarToken(int $len = 24): string {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $csrf = $_POST['csrf_token'] ?? null;
+    if (!csrfValidate(is_string($csrf) ? $csrf : null)) {
+        http_response_code(400);
+        echo 'Token CSRF invalido';
+        exit;
+    }
+
     $nombre = trim($_POST['nombre'] ?? '');
     $descripcion = trim($_POST['descripcion'] ?? '');
     $estado = ($_POST['estado'] ?? 'activa') === 'inactiva' ? 'inactiva' : 'activa';
@@ -22,6 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             VALUES (?, ?, ?, ?, NOW())
         ");
         $stmt->execute([$nombre, $descripcion !== '' ? $descripcion : null, $token, $estado]);
+        $user = currentUser();
+        if ($user) {
+            auditLog((int)$user['id'], 'campana_creada', 'Campana: ' . $nombre);
+        }
+
         header('Location: campanas.php?ok=1');
         exit;
     }
@@ -39,6 +55,7 @@ require __DIR__ . '/../includes/header_admin.php';
       <h5 class="section-title mb-3">Nueva campaña</h5>
 
       <form method="post" class="row g-3">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrfToken()) ?>">
         <div class="col-md-4">
           <label class="form-label">Nombre</label>
           <input type="text" name="nombre" class="form-control" required>

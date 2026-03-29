@@ -6,6 +6,7 @@ El sistema es una aplicacion web PHP monolitica con un flujo publico para captur
 ## Componentes principales
 - Publico: `index.php`, `formulario.php`, `guardar_feedback.php`, `gracias.php`.
 - Administracion: `admin/dashboard.php`, `admin/campanas.php`, `admin/respuestas.php`, `admin/detalle_feedback.php`, `admin/qr_campana.php`, `admin/procesar_ia_respuesta.php`.
+- Seguridad: autenticacion y roles en `includes/auth.php` con reset por correo.
 - IA: `api/analizar_feedback.php`.
 - Configuracion: `config/app.php`, `config/db.php`, `config/openai.php`.
 - UI compartida: `includes/header_public.php`, `includes/header_admin.php`, `includes/footer.php`, `includes/estilos_feedback.php`.

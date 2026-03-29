@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/csrf.php';
+
+requireRole(['admin', 'analista', 'lector']);
 
 $pdo = db();
 
@@ -90,7 +94,6 @@ $volver = 'respuestas.php' . ($queryActual !== '' ? '?' . $queryActual : '');
             <option value="positivo" <?= $sentimiento === 'positivo' ? 'selected' : '' ?>>Positivo</option>
             <option value="neutro" <?= $sentimiento === 'neutro' ? 'selected' : '' ?>>Neutro</option>
             <option value="negativo" <?= $sentimiento === 'negativo' ? 'selected' : '' ?>>Negativo</option>
-            <option value="mixto" <?= $sentimiento === 'mixto' ? 'selected' : '' ?>>Mixto</option>
           </select>
         </div>
         <div class="col-md-2 align-self-end">
@@ -159,12 +162,21 @@ $volver = 'respuestas.php' . ($queryActual !== '' ? '?' . $queryActual : '');
                         <i class="bi bi-eye"></i>
                       </a>
 
-                      <a href="procesar_ia_respuesta.php?id=<?= (int)$r['id'] ?>&volver=<?= urlencode($volver) ?>"
-                         class="btn btn-sm <?= $yaAnalizado ? 'btn-outline-warning' : 'btn-outline-success' ?>"
-                         title="<?= $yaAnalizado ? 'Reanalizar con IA' : 'Analizar con IA' ?>"
-                         onclick="return confirm('¿Deseas <?= $yaAnalizado ? 'reanalizar' : 'analizar' ?> esta respuesta con IA?');">
-                        <i class="bi <?= $yaAnalizado ? 'bi-arrow-repeat' : 'bi-cpu' ?>"></i>
-                      </a>
+                      <?php if (userHasRole('admin') || userHasRole('analista')): ?>
+                        <form method="post" action="procesar_ia_respuesta.php" class="d-inline">
+                          <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(csrfToken()) ?>">
+                          <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+                          <input type="hidden" name="volver" value="<?= htmlspecialchars($volver) ?>">
+                          <button
+                            type="submit"
+                            class="btn btn-sm <?= $yaAnalizado ? 'btn-outline-warning' : 'btn-outline-success' ?>"
+                            title="<?= $yaAnalizado ? 'Reanalizar con IA' : 'Analizar con IA' ?>"
+                            onclick="return confirm('¿Deseas <?= $yaAnalizado ? 'reanalizar' : 'analizar' ?> esta respuesta con IA?');"
+                          >
+                            <i class="bi <?= $yaAnalizado ? 'bi-arrow-repeat' : 'bi-cpu' ?>"></i>
+                          </button>
+                        </form>
+                      <?php endif; ?>
                     </div>
                   </td>
                 </tr>

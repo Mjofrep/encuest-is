@@ -1,6 +1,11 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/security.php';
+require_once __DIR__ . '/auth.php';
+
+enforceHttpsIfNeeded();
+sendSecurityHeaders();
 ?>
 <!doctype html>
 <html lang="es">
@@ -25,11 +30,23 @@ require_once __DIR__ . '/../config/app.php';
       </div>
     </div>
 
-    <div class="d-flex gap-2 flex-wrap">
+    <div class="d-flex gap-2 flex-wrap align-items-center">
       <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-outline-primary btn-sm">Dashboard</a>
       <a href="<?= APP_URL ?>/admin/campanas.php" class="btn btn-outline-primary btn-sm">Campanas</a>
       <a href="<?= APP_URL ?>/admin/respuestas.php" class="btn btn-outline-primary btn-sm">Respuestas</a>
-
+      <?php if (function_exists('userHasRole') && userHasRole('admin')): ?>
+        <a href="<?= APP_URL ?>/admin/usuarios.php" class="btn btn-outline-primary btn-sm">Usuarios</a>
+      <?php endif; ?>
     </div>
+
+    <?php if (function_exists('currentUser')): ?>
+      <?php $user = currentUser(); ?>
+      <?php if ($user): ?>
+        <div class="d-flex gap-2 align-items-center">
+          <small class="text-muted">Hola, <?= htmlspecialchars((string)$user['nombre']) ?></small>
+          <a href="<?= APP_URL ?>/admin/logout.php" class="btn btn-outline-secondary btn-sm">Salir</a>
+        </div>
+      <?php endif; ?>
+    <?php endif; ?>
   </div>
 </header>

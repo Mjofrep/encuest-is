@@ -3,6 +3,7 @@
 ## Runtime
 - PHP 8.0+ (se usa `match` y `declare(strict_types=1)`).
 - Extensiones PHP: `pdo`, `pdo_mysql`, `curl`, `json`.
+- `mail()` habilitado o servicio SMTP equivalente.
 - Servidor web: Apache o Nginx (MAMP funciona).
 - MySQL 5.7+ o MariaDB compatible.
 
@@ -10,6 +11,7 @@
 - `config/app.php`: nombre, subtitulo, logo y `APP_URL`.
 - `config/db.php`: host, base, usuario y clave de MySQL.
 - `config/openai.php`: `OPENAI_API_KEY` y `OPENAI_MODEL`.
+- `config/secrets.php`: credenciales DB, OpenAI y remitente de correo.
 
 ## Dependencias externas (CDN/API)
 - Bootstrap 5.3 (CDN).

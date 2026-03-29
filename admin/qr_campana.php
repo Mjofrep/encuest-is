@@ -2,6 +2,9 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../includes/auth.php';
+
+requireRole(['admin']);
 
 $token = trim($_GET['token'] ?? '');
 

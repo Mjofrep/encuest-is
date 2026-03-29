@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../includes/auth.php';
+
+requireRole(['admin', 'analista', 'lector']);
 
 $pdo = db();
 $id = (int)($_GET['id'] ?? 0);

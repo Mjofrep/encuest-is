@@ -46,6 +46,40 @@ Tablas principales utilizadas:
 - `tema` (nullable)
 - `created_at`
 
+### `fb_usuarios`
+- `id` (PK)
+- `nombre`
+- `email`
+- `password_hash`
+- `estado` (1/0)
+- `created_at`
+- `updated_at`
+
+### `fb_roles`
+- `id` (PK)
+- `clave` (admin/analista/lector)
+- `nombre`
+
+### `fb_usuarios_roles`
+- `usuario_id` (FK -> `fb_usuarios.id`)
+- `rol_id` (FK -> `fb_roles.id`)
+
+### `fb_password_resets`
+- `id` (PK)
+- `usuario_id` (FK -> `fb_usuarios.id`)
+- `token_hash`
+- `expires_at`
+- `used_at`
+- `created_at`
+
+### `fb_auditoria`
+- `id` (PK)
+- `usuario_id` (nullable)
+- `accion`
+- `detalle`
+- `ip`
+- `created_at`
+
 Nota: la estructura exacta debe confirmarse con el esquema real.
 
 ## Analisis IA
@@ -72,6 +106,9 @@ Funcion principal: `analizarFeedbackConIA($respuestaId)`.
   - `admin/respuestas.php` listado y filtros.
   - `admin/detalle_feedback.php?id=...` detalle.
   - `admin/procesar_ia_respuesta.php?id=...` ejecuta IA.
+  - `admin/usuarios.php` CRUD de usuarios y roles.
+  - `admin/login.php`, `admin/logout.php` autenticacion.
+  - `admin/forgot_password.php`, `admin/reset_password.php` reset por correo.
 
 ## Manejo de errores
 - Se redirige a paginas seguras ante validaciones fallidas.

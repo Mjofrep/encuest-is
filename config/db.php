@@ -9,11 +9,23 @@ function db(): PDO
         return $pdo;
     }
 
-    $host = '127.0.0.1';
-    $db   = 'noeticac_feedback';
-    $user = 'noeticac_root';
-    $pass = 'Turing_1964$';
-    $charset = 'utf8mb4';
+    $secrets = [];
+    $secretsPath = __DIR__ . '/secrets.php';
+    if (file_exists($secretsPath)) {
+        $secrets = require $secretsPath;
+    }
+
+    $dbSecrets = is_array($secrets['db'] ?? null) ? $secrets['db'] : [];
+
+    $host = (string)($dbSecrets['host'] ?? '127.0.0.1');
+    $db   = (string)($dbSecrets['name'] ?? '');
+    $user = (string)($dbSecrets['user'] ?? '');
+    $pass = (string)($dbSecrets['pass'] ?? '');
+    $charset = (string)($dbSecrets['charset'] ?? 'utf8mb4');
+
+    if ($db === '' || $user === '') {
+        throw new RuntimeException('DB credentials not configured. Create config/secrets.php');
+    }
 
     $dsn = "mysql:host={$host};dbname={$db};charset={$charset}";
 
