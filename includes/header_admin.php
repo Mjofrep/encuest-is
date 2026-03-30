@@ -33,6 +33,9 @@ sendSecurityHeaders();
     <div class="d-flex gap-2 flex-wrap align-items-center">
       <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-outline-primary btn-sm">Dashboard</a>
       <a href="<?= APP_URL ?>/admin/campanas.php" class="btn btn-outline-primary btn-sm">Campanas</a>
+      <?php if (function_exists('userHasRole') && userHasRole('admin')): ?>
+        <a href="<?= APP_URL ?>/admin/preguntas.php" class="btn btn-outline-primary btn-sm">Preguntas</a>
+      <?php endif; ?>
       <a href="<?= APP_URL ?>/admin/respuestas.php" class="btn btn-outline-primary btn-sm">Respuestas</a>
       <?php if (function_exists('userHasRole') && userHasRole('admin')): ?>
         <a href="<?= APP_URL ?>/admin/usuarios.php" class="btn btn-outline-primary btn-sm">Usuarios</a>

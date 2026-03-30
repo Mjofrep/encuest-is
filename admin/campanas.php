@@ -94,6 +94,7 @@ require __DIR__ . '/../includes/header_admin.php';
               <th>Estado</th>
               <th>URL</th>
               <th>QR</th>
+              <th>Preguntas</th>
               <th>Fecha</th>
             </tr>
           </thead>
@@ -128,6 +129,11 @@ require __DIR__ . '/../includes/header_admin.php';
                     <a href="qr_campana.php?token=<?= urlencode($c['url_token']) ?>"
                        class="btn btn-sm btn-outline-primary">
                       <i class="bi bi-qr-code me-1"></i>Generar QR
+                    </a>
+                  </td>
+                  <td>
+                    <a href="preguntas.php?campana_id=<?= (int)$c['id'] ?>" class="btn btn-sm btn-outline-secondary">
+                      <i class="bi bi-list-check me-1"></i>Gestionar
                     </a>
                   </td>
                   <td><?= htmlspecialchars($c['fecha_creacion']) ?></td>

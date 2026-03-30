@@ -16,6 +16,23 @@ if (!$campana) {
     exit;
 }
 
+$stmt = $pdo->prepare("SELECT * FROM fb_preguntas WHERE campana_id = ? ORDER BY orden ASC, id ASC");
+$stmt->execute([(int)$campana['id']]);
+$preguntas = $stmt->fetchAll();
+
+$opcionesPorPregunta = [];
+if ($preguntas) {
+    $ids = array_map(static fn($p) => (int)$p['id'], $preguntas);
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $stmt = $pdo->prepare("SELECT * FROM fb_preguntas_opciones WHERE pregunta_id IN ($placeholders) ORDER BY orden ASC, id ASC");
+    $stmt->execute($ids);
+    $opciones = $stmt->fetchAll();
+    foreach ($opciones as $opcion) {
+        $pid = (int)$opcion['pregunta_id'];
+        $opcionesPorPregunta[$pid][] = $opcion;
+    }
+}
+
 $pageTitle = 'Formulario Feedback';
 require __DIR__ . '/includes/header_public.php';
 ?>
@@ -30,7 +47,7 @@ require __DIR__ . '/includes/header_public.php';
 
       <div class="d-flex align-items-center justify-content-between mb-2">
         <div><strong>Formulario breve</strong></div>
-        <div class="text-muted">3 preguntas</div>
+        <div class="text-muted"><?= count($preguntas) ?> preguntas</div>
       </div>
 
       <div class="progress mb-4">
@@ -41,26 +58,44 @@ require __DIR__ . '/includes/header_public.php';
         <input type="hidden" name="campana_id" value="<?= (int)$campana['id'] ?>">
         <input type="hidden" name="token" value="<?= htmlspecialchars($token) ?>">
 
-        <div class="mb-4">
-          <label class="form-label fw-semibold">1. ¿Cómo calificarías tu experiencia?</label>
-          <div class="d-flex gap-2 flex-wrap">
-            <?php for ($i=1; $i<=5; $i++): ?>
-              <input type="radio" class="btn-check" name="calificacion" id="cal_<?= $i ?>" value="<?= $i ?>" required>
-              <label class="btn btn-outline-primary score-option" for="cal_<?= $i ?>"><?= $i ?></label>
-            <?php endfor; ?>
-          </div>
-          <small class="text-muted d-block mt-2">1 = Muy mala / 5 = Excelente</small>
-        </div>
+        <?php if (!$preguntas): ?>
+          <div class="alert alert-warning">Esta campaña no tiene preguntas configuradas.</div>
+        <?php else: ?>
+          <?php foreach ($preguntas as $index => $pregunta): ?>
+            <?php
+              $numero = $index + 1;
+              $tipo = (string)$pregunta['tipo'];
+              $campo = 'pregunta_' . (int)$pregunta['id'];
+              $obligatoria = (int)$pregunta['obligatoria'] === 1;
+            ?>
+            <div class="mb-4">
+              <label class="form-label fw-semibold">
+                <?= $numero ?>. <?= htmlspecialchars((string)$pregunta['texto_pregunta']) ?>
+              </label>
 
-        <div class="mb-3">
-          <label class="form-label fw-semibold">2. ¿Qué fue lo mejor de tu experiencia?</label>
-          <textarea name="respuesta_2" class="form-control" rows="3" maxlength="1000" required></textarea>
-        </div>
+              <?php if ($tipo === 'escala'): ?>
+                <div class="d-flex gap-2 flex-wrap">
+                  <?php for ($i=1; $i<=5; $i++): ?>
+                    <input type="radio" class="btn-check" name="<?= htmlspecialchars($campo) ?>" id="cal_<?= (int)$pregunta['id'] ?>_<?= $i ?>" value="<?= $i ?>" <?= $obligatoria ? 'required' : '' ?>>
+                    <label class="btn btn-outline-primary score-option" for="cal_<?= (int)$pregunta['id'] ?>_<?= $i ?>"><?= $i ?></label>
+                  <?php endfor; ?>
+                </div>
+                <small class="text-muted d-block mt-2">1 = Muy mala / 5 = Excelente</small>
 
-        <div class="mb-3">
-          <label class="form-label fw-semibold">3. ¿Qué deberíamos mejorar?</label>
-          <textarea name="comentario" class="form-control" rows="3" maxlength="1000" required></textarea>
-        </div>
+              <?php elseif ($tipo === 'texto'): ?>
+                <textarea name="<?= htmlspecialchars($campo) ?>" class="form-control" rows="3" maxlength="1000" <?= $obligatoria ? 'required' : '' ?>></textarea>
+
+              <?php elseif ($tipo === 'opcion'): ?>
+                <select name="<?= htmlspecialchars($campo) ?>" class="form-select" <?= $obligatoria ? 'required' : '' ?>>
+                  <option value="">Selecciona una opcion</option>
+                  <?php foreach (($opcionesPorPregunta[(int)$pregunta['id']] ?? []) as $opcion): ?>
+                    <option value="<?= (int)$opcion['id'] ?>"><?= htmlspecialchars((string)$opcion['texto_opcion']) ?></option>
+                  <?php endforeach; ?>
+                </select>
+              <?php endif; ?>
+            </div>
+          <?php endforeach; ?>
+        <?php endif; ?>
 
         <!-- div class="row g-3 mb-4">
           <div class="col-md-6">
@@ -77,7 +112,7 @@ require __DIR__ . '/includes/header_public.php';
           <a href="index.php?token=<?= urlencode($token) ?>" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-2"></i>Volver
           </a>
-          <button type="submit" class="btn btn-primary px-4">
+          <button type="submit" class="btn btn-primary px-4" <?= !$preguntas ? 'disabled' : '' ?>>
             <i class="bi bi-send me-2"></i>Enviar feedback
           </button>
         </div>

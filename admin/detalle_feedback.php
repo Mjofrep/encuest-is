@@ -43,6 +43,16 @@ $stmtDet = $pdo->prepare("
 $stmtDet->execute([$id]);
 $detalles = $stmtDet->fetchAll();
 
+$stmtResp = $pdo->prepare("
+    SELECT p.texto_pregunta, p.tipo, d.respuesta_texto, d.respuesta_opcion, d.respuesta_escala
+    FROM fb_respuestas_detalle d
+    JOIN fb_preguntas p ON p.id = d.pregunta_id
+    WHERE d.respuesta_id = ?
+    ORDER BY p.orden ASC, p.id ASC
+");
+$stmtResp->execute([$id]);
+$respuestasDetalle = $stmtResp->fetchAll();
+
 $hallazgosPositivos = [];
 $hallazgosNegativos = [];
 
@@ -101,17 +111,36 @@ function badgeClass(?string $sent): string {
     <div class="card-body">
       <h6 class="section-title mb-3">Respuesta del usuario</h6>
 
-      <div class="mb-3">
-        <small class="text-muted">¿Qué fue lo mejor de tu experiencia?</small>
-        <div class="soft-box mt-1"><?= nl2br(htmlspecialchars($row['respuesta_2'] ?? '')) ?></div>
-      </div>
+      <?php if ($respuestasDetalle): ?>
+        <div class="d-flex flex-column gap-3">
+          <?php foreach ($respuestasDetalle as $resp): ?>
+            <div class="soft-box">
+              <small class="text-muted"><?= htmlspecialchars((string)$resp['texto_pregunta']) ?></small>
+              <div class="fw-semibold mt-1">
+                <?php if ($resp['tipo'] === 'escala'): ?>
+                  <?= (int)$resp['respuesta_escala'] ?>
+                <?php elseif ($resp['tipo'] === 'opcion'): ?>
+                  <?= htmlspecialchars((string)$resp['respuesta_opcion']) ?>
+                <?php else: ?>
+                  <?= nl2br(htmlspecialchars((string)$resp['respuesta_texto'])) ?>
+                <?php endif; ?>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php else: ?>
+        <div class="mb-3">
+          <small class="text-muted">¿Qué fue lo mejor de tu experiencia?</small>
+          <div class="soft-box mt-1"><?= nl2br(htmlspecialchars($row['respuesta_2'] ?? '')) ?></div>
+        </div>
 
-      <div class="mb-3">
-        <small class="text-muted">¿Qué deberíamos mejorar?</small>
-        <div class="soft-box mt-1"><?= nl2br(htmlspecialchars($row['comentario'] ?? '')) ?></div>
-      </div>
+        <div class="mb-3">
+          <small class="text-muted">¿Qué deberíamos mejorar?</small>
+          <div class="soft-box mt-1"><?= nl2br(htmlspecialchars($row['comentario'] ?? '')) ?></div>
+        </div>
+      <?php endif; ?>
 
-      <div class="row g-3">
+      <div class="row g-3 mt-2">
         <div class="col-md-6">
           <small class="text-muted">Sucursal / Área</small>
           <div class="fw-semibold"><?= htmlspecialchars($row['sucursal'] ?? '—') ?></div>

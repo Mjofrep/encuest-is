@@ -29,6 +29,35 @@ function analizarFeedbackConIA(int $respuestaId): bool
         return false;
     }
 
+    $stmt = $pdo->prepare("
+        SELECT p.texto_pregunta, p.tipo, d.respuesta_texto, d.respuesta_opcion, d.respuesta_escala
+        FROM fb_respuestas_detalle d
+        JOIN fb_preguntas p ON p.id = d.pregunta_id
+        WHERE d.respuesta_id = ?
+        ORDER BY p.orden ASC, p.id ASC
+    ");
+    $stmt->execute([$respuestaId]);
+    $detalleRespuestas = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+    $lineasRespuestas = [];
+    foreach ($detalleRespuestas as $detalle) {
+        $pregunta = trim((string)($detalle['texto_pregunta'] ?? ''));
+        $tipo = (string)($detalle['tipo'] ?? '');
+        $valor = '';
+
+        if ($tipo === 'escala') {
+            $valor = (string)($detalle['respuesta_escala'] ?? '');
+        } elseif ($tipo === 'opcion') {
+            $valor = (string)($detalle['respuesta_opcion'] ?? '');
+        } else {
+            $valor = (string)($detalle['respuesta_texto'] ?? '');
+        }
+
+        if ($pregunta !== '' && $valor !== '') {
+            $lineasRespuestas[] = $pregunta . ': ' . $valor;
+        }
+    }
+
     $schema = [
         'type' => 'object',
         'additionalProperties' => false,
@@ -130,7 +159,8 @@ function analizarFeedbackConIA(int $respuestaId): bool
                         'Sucursal: ' . (string)($row['sucursal'] ?? ''),
                         'Canal: ' . (string)($row['canal'] ?? ''),
                         'Lo mejor: ' . (string)($row['respuesta_2'] ?? ''),
-                        'Mejorar: ' . (string)($row['comentario'] ?? '')
+                        'Mejorar: ' . (string)($row['comentario'] ?? ''),
+                        'Respuestas: ' . ($lineasRespuestas ? implode(' | ', $lineasRespuestas) : '')
                     ])
                 ]
             ]

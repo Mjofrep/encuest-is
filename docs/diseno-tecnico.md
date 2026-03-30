@@ -46,6 +46,31 @@ Tablas principales utilizadas:
 - `tema` (nullable)
 - `created_at`
 
+### `fb_preguntas`
+- `id` (PK)
+- `campana_id` (FK -> `fb_campanas.id`)
+- `texto_pregunta`
+- `tipo` (escala/texto/opcion)
+- `orden`
+- `obligatoria`
+- `created_at`
+- `updated_at`
+
+### `fb_preguntas_opciones`
+- `id` (PK)
+- `pregunta_id` (FK -> `fb_preguntas.id`)
+- `texto_opcion`
+- `orden`
+
+### `fb_respuestas_detalle`
+- `id` (PK)
+- `respuesta_id` (FK -> `fb_respuestas.id`)
+- `pregunta_id` (FK -> `fb_preguntas.id`)
+- `respuesta_texto`
+- `respuesta_opcion`
+- `respuesta_escala`
+- `created_at`
+
 ### `fb_usuarios`
 - `id` (PK)
 - `nombre`
@@ -102,6 +127,7 @@ Funcion principal: `analizarFeedbackConIA($respuestaId)`.
 - Admin:
   - `admin/dashboard.php` KPIs y graficos.
   - `admin/campanas.php` alta y listado.
+  - `admin/preguntas.php` mantenedor de preguntas por campaña.
   - `admin/qr_campana.php?token=...` QR.
   - `admin/respuestas.php` listado y filtros.
   - `admin/detalle_feedback.php?id=...` detalle.

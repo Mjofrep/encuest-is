@@ -11,10 +11,17 @@ $pageTitle = 'Inicio Feedback';
 require __DIR__ . '/includes/header_public.php';
 
 $campana = null;
+$totalPreguntas = 0;
 if ($token !== '') {
     $stmt = $pdo->prepare("SELECT * FROM fb_campanas WHERE url_token = ? AND estado = 'activa' LIMIT 1");
     $stmt->execute([$token]);
     $campana = $stmt->fetch();
+
+    if ($campana) {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM fb_preguntas WHERE campana_id = ?");
+        $stmt->execute([(int)$campana['id']]);
+        $totalPreguntas = (int)$stmt->fetchColumn();
+    }
 }
 ?>
 
@@ -38,7 +45,7 @@ if ($token !== '') {
             <p class="text-muted mb-2">
               <?= htmlspecialchars($campana['descripcion'] ?? 'Tu opinión nos ayuda a mejorar.') ?>
             </p>
-            <small class="text-muted">Responde 3 preguntas rápidas. Te tomará menos de 1 minuto.</small>
+            <small class="text-muted">Responde <?= $totalPreguntas ?> preguntas rápidas. Te tomará menos de 1 minuto.</small>
           </div>
 
           <div class="soft-box mb-4">
@@ -46,7 +53,7 @@ if ($token !== '') {
               <div class="col-md-4">
                 <i class="bi bi-lightning-charge text-primary fs-4"></i>
                 <div class="fw-semibold mt-2">Rápido</div>
-                <small class="text-muted">Solo 3 preguntas</small>
+                <small class="text-muted">Solo <?= $totalPreguntas ?> preguntas</small>
               </div>
               <div class="col-md-4">
                 <i class="bi bi-phone text-primary fs-4"></i>
