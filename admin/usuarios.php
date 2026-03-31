@@ -19,7 +19,7 @@ foreach ($rolesDisponibles as $r) {
 function filtrarRolesSeleccionados(array $rolesIds, array $rolesDisponibles): array
 {
     $valid = [];
-    $idsDisponibles = array_column($rolesDisponibles, 'id');
+    $idsDisponibles = array_map('intval', array_column($rolesDisponibles, 'id'));
     foreach ($rolesIds as $id) {
         $id = (int)$id;
         if (in_array($id, $idsDisponibles, true)) {
