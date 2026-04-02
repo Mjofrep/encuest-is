@@ -131,6 +131,20 @@ body{
   font-size:3rem;
 }
 
+.word-cloud{
+  line-height:1.2;
+  justify-content:center;
+  text-align:center;
+  min-height:140px;
+}
+
+.word-cloud-item{
+  display:inline-block;
+  font-weight:600;
+  opacity:.9;
+  margin:2px 6px;
+}
+
 @media (max-width: 576px){
   .score-option{
     width:42px;

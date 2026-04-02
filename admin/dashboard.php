@@ -135,6 +135,120 @@ $ultimas = $stmt->fetchAll();
 $pageTitle = 'Dashboard';
 require __DIR__ . '/../includes/header_admin.php';
 
+function normalizarTexto(string $texto): string
+{
+    $texto = strtolower($texto);
+    $texto = preg_replace('/[^a-z0-9áéíóúñü]+/iu', ' ', $texto) ?? '';
+    return trim($texto);
+}
+
+function obtenerStopwords(): array
+{
+    return [
+        'de','la','que','el','en','y','a','los','del','se','las','por','un','para','con','no','una','su','al','lo','como','mas','pero','sus','le','ya','o','este','si','porque','esta','entre','cuando','muy','sin','sobre','tambien','me','hasta','hay','donde','quien','desde','todo','nos','durante','todos','uno','les','ni','contra','otros','ese','eso','ante','ellos','e','esto','mi','antes','algunos','que','unos','yo','otro','otras','otra','el','tanto','esa','estos','mucho','quienes','nada','muchos','cual','poco','ella','estar','estas','algunas','algo','nosotros','mi','mis','tu','te','ti','tus','ellas','nos','vosotros','vosotras','os','mio','mia','mios','mias','tuyo','tuya','tuyos','tuyas','suyo','suya','suyos','suyas','nuestro','nuestra','nuestros','nuestras','vuestro','vuestra','vuestros','vuestras','esos','esas','estoy','esta','estamos','estais','estan','estaba','estabas','estabamos','estabais','estaban','estuve','estuviste','estuvo','estuvimos','estuvisteis','estuvieron','estuviera','estuvieras','estuvieramos','estuvierais','estuvieran','estuviese','estuvieses','estuviesemos','estuvieseis','estuviesen','estando','estado','estada','estados','estadas','estad','he','has','ha','hemos','habeis','han','haya','hayas','hayamos','hayais','hayan','habia','habias','habiamos','habiais','habian','hube','hubiste','hubo','hubimos','hubisteis','hubieron','hubiera','hubieras','hubieramos','hubierais','hubieran','hubiese','hubieses','hubiesemos','hubieseis','hubiesen','habiendo','habido','habida','habidos','habidas','soy','eres','es','somos','sois','son','sea','seas','seamos','seais','sean','era','eras','eramos','erais','eran','fui','fuiste','fue','fuimos','fuisteis','fueron','fuera','fueras','fueramos','fuerais','fueran','fuese','fueses','fuesemos','fueseis','fuesen','siendo','sido','tengo','tienes','tiene','tenemos','teneis','tienen','tenga','tengas','tengamos','tengais','tengan','tenia','tenias','teniamos','teniais','tenian','tuve','tuviste','tuvo','tuvimos','tuvisteis','tuvieron','tuviera','tuvieras','tuvieramos','tuvierais','tuvieran','tuviese','tuvieses','tuviesemos','tuvieseis','tuviesen','teniendo','tenido','tenida','tenidos','tenidas'
+    ];
+}
+
+function construirNube(array $textos, int $maxPalabras = 40): array
+{
+    $stopwords = array_fill_keys(obtenerStopwords(), true);
+    $conteo = [];
+
+    foreach ($textos as $texto) {
+        $texto = normalizarTexto((string)$texto);
+        if ($texto === '') {
+            continue;
+        }
+        $palabras = preg_split('/\s+/', $texto) ?: [];
+        foreach ($palabras as $palabra) {
+            $palabra = trim($palabra);
+            if ($palabra === '' || strlen($palabra) < 3) {
+                continue;
+            }
+            if (isset($stopwords[$palabra])) {
+                continue;
+            }
+            $conteo[$palabra] = ($conteo[$palabra] ?? 0) + 1;
+        }
+    }
+
+    if (!$conteo) {
+        return [];
+    }
+
+    arsort($conteo);
+    $conteo = array_slice($conteo, 0, $maxPalabras, true);
+
+    $valores = array_values($conteo);
+    $min = min($valores);
+    $max = max($valores);
+    $minFont = 12;
+    $maxFont = 34;
+
+    $resultado = [];
+    foreach ($conteo as $palabra => $total) {
+        $size = $min === $max ? ($minFont + $maxFont) / 2 : $minFont + (($total - $min) * ($maxFont - $minFont) / ($max - $min));
+        $resultado[] = [
+            'word' => $palabra,
+            'count' => $total,
+            'size' => round($size, 1)
+        ];
+    }
+
+    return $resultado;
+}
+
+function colorParaPalabra(string $palabra): string
+{
+    $palette = [
+        '#2f6f9e', '#f4a340', '#e36c6c', '#3a8f6b', '#b07cc6',
+        '#4f81bd', '#c0504d', '#9bbb59', '#8064a2', '#4bacc6'
+    ];
+    $hash = crc32($palabra);
+    $index = (int)($hash % count($palette));
+    return $palette[$index];
+}
+
+function rotacionParaPalabra(string $palabra): int
+{
+    $rotaciones = [-10, -5, 0, 5, 10];
+    $hash = crc32('r' . $palabra);
+    $index = (int)($hash % count($rotaciones));
+    return $rotaciones[$index];
+}
+
+function obtenerTextosNube(PDO $pdo, string $tipo, string $whereSql, array $params): array
+{
+    $textos = [];
+    $whereTipo = $whereSql ? ($whereSql . " AND d.tipo = ?") : "WHERE d.tipo = ?";
+    $paramsTipo = array_merge($params, [$tipo]);
+
+    $sql = "
+        SELECT d.fragmento, d.tema
+        FROM fb_analisis_ia_detalle d
+        JOIN fb_respuestas r ON r.id = d.respuesta_id
+        $whereTipo
+    ";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($paramsTipo);
+    $rows = $stmt->fetchAll();
+    foreach ($rows as $row) {
+        if (!empty($row['fragmento'])) {
+            $textos[] = $row['fragmento'];
+        }
+        if (!empty($row['tema'])) {
+            $textos[] = $row['tema'];
+        }
+    }
+
+    return $textos;
+}
+
+$textosPositivos = obtenerTextosNube($pdo, 'positivo', $whereSql, $params);
+$textosNegativos = obtenerTextosNube($pdo, 'negativo', $whereSql, $params);
+$nubePositiva = construirNube($textosPositivos);
+$nubeNegativa = construirNube($textosNegativos);
+
 $positivas = 0;
 $negativas = 0;
 $neutras   = 0;
@@ -364,6 +478,62 @@ $tooltipNegativos = armarTooltipResumen($topNegativos, 'No hay hallazgos negativ
           <div style="position:relative; height:320px;">
             <canvas id="chartFragmentos"></canvas>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="card rounded-4 h-100">
+        <div class="card-body">
+          <h6 class="section-title mb-3">Nube de palabras positivas</h6>
+          <?php if (!$nubePositiva): ?>
+            <div class="text-muted">No hay suficientes datos.</div>
+          <?php else: ?>
+            <div class="d-flex flex-wrap gap-2 word-cloud">
+              <?php foreach ($nubePositiva as $item): ?>
+                <?php
+                  $color = colorParaPalabra((string)$item['word']);
+                  $rot = rotacionParaPalabra((string)$item['word']);
+                ?>
+                <span
+                  class="word-cloud-item"
+                  style="font-size:<?= htmlspecialchars((string)$item['size']) ?>px; color:<?= htmlspecialchars($color) ?>; transform: rotate(<?= (int)$rot ?>deg);"
+                  title="<?= htmlspecialchars($item['word']) ?> (<?= (int)$item['count'] ?>)"
+                >
+                  <?= htmlspecialchars($item['word']) ?>
+                </span>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card rounded-4 h-100">
+        <div class="card-body">
+          <h6 class="section-title mb-3">Nube de palabras negativas</h6>
+          <?php if (!$nubeNegativa): ?>
+            <div class="text-muted">No hay suficientes datos.</div>
+          <?php else: ?>
+            <div class="d-flex flex-wrap gap-2 word-cloud">
+              <?php foreach ($nubeNegativa as $item): ?>
+                <?php
+                  $color = colorParaPalabra((string)$item['word']);
+                  $rot = rotacionParaPalabra((string)$item['word']);
+                ?>
+                <span
+                  class="word-cloud-item"
+                  style="font-size:<?= htmlspecialchars((string)$item['size']) ?>px; color:<?= htmlspecialchars($color) ?>; transform: rotate(<?= (int)$rot ?>deg);"
+                  title="<?= htmlspecialchars($item['word']) ?> (<?= (int)$item['count'] ?>)"
+                >
+                  <?= htmlspecialchars($item['word']) ?>
+                </span>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
         </div>
       </div>
     </div>
